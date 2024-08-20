@@ -146,26 +146,28 @@ export default function ReceiptsPage() {
 				</CardContent>
 			</Card>
 
-			{receipts.map((receipt) => (
-				<Card key={receipt.id} className='pt-6 mb-2'>
-					<CardContent className='flex justify-between items-center'>
-						<div>
+			<div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+				{receipts.map((receipt) => (
+					<Card key={receipt.id} className='pt-6'>
+						<CardContent>
+							<h3 className='font-bold mb-2'>{receipt.recipientName}</h3>
 							<p>
-								{receipt.recipientName} - {receipt.amount} {receipt.currency}
+								{receipt.amount} {receipt.currency}
 							</p>
 							<p className='text-sm text-gray-500'>{new Date(receipt.date).toLocaleDateString()}</p>
-						</div>
-						<div>
-							<Button variant='outline' className='mr-2' onClick={() => handleEditClick(receipt)}>
-								Edit
-							</Button>
-							<Button variant='destructive' onClick={() => handleDelete(receipt.id)}>
-								Delete
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
-			))}
+							<p className='text-sm'>Ref: {receipt.referenceNumber}</p>
+							<div className='mt-4 flex justify-end space-x-2'>
+								<Button variant='outline' onClick={() => handleEditClick(receipt)}>
+									Edit
+								</Button>
+								<Button variant='destructive' onClick={() => handleDelete(receipt.id)}>
+									Delete
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				))}
+			</div>
 
 			<Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
 				<DialogContent>

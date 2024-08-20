@@ -89,8 +89,8 @@ function TransactionsPage() {
 
 	return (
 		<div className='container mx-auto px-4 py-8'>
-			<div className='flex justify-between items-center mb-6'>
-				<h1 className='text-2xl font-bold'>Transactions</h1>
+			<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6'>
+				<h1 className='text-2xl font-bold mb-4 sm:mb-0'>Transactions</h1>
 				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 					<DialogTrigger asChild>
 						<Button onClick={() => setCurrentTransaction(null)}>
@@ -159,38 +159,47 @@ function TransactionsPage() {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Date</TableHead>
+							<TableHead className='hidden md:table-cell'>Date</TableHead>
 							<TableHead>Description</TableHead>
 							<TableHead>Amount</TableHead>
-							<TableHead>Type</TableHead>
-							<TableHead>Recurring</TableHead>
-							<TableHead>Interval</TableHead>
+							<TableHead className='hidden md:table-cell'>Type</TableHead>
+							<TableHead className='hidden md:table-cell'>Recurring</TableHead>
+							<TableHead className='hidden lg:table-cell'>Interval</TableHead>
 							<TableHead>Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{transactions.map((transaction) => (
 							<TableRow key={transaction.id}>
-								<TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-								<TableCell>{transaction.description}</TableCell>
-								<TableCell>${transaction.amount.toFixed(2)}</TableCell>
-								<TableCell>{transaction.type}</TableCell>
-								<TableCell>{transaction.isRecurring ? 'Yes' : 'No'}</TableCell>
-								<TableCell>{transaction.recurrenceInterval}</TableCell>
+								<TableCell className='hidden md:table-cell'>
+									{new Date(transaction.date).toLocaleDateString()}
+								</TableCell>
 								<TableCell>
-									<Button
-										variant='ghost'
-										size='icon'
-										onClick={() => {
-											setCurrentTransaction(transaction);
-											setIsDialogOpen(true);
-										}}
-									>
-										<Pencil className='h-4 w-4' />
-									</Button>
-									<Button variant='ghost' size='icon' onClick={() => handleDelete(transaction.id)}>
-										<Trash2 className='h-4 w-4' />
-									</Button>
+									{transaction.description}
+									<span className='block md:hidden text-sm text-gray-500'>
+										{new Date(transaction.date).toLocaleDateString()}
+									</span>
+								</TableCell>
+								<TableCell>₱{transaction.amount.toFixed(2)}</TableCell>
+								<TableCell className='hidden md:table-cell'>{transaction.type}</TableCell>
+								<TableCell className='hidden md:table-cell'>{transaction.isRecurring ? 'Yes' : 'No'}</TableCell>
+								<TableCell className='hidden lg:table-cell'>{transaction.recurrenceInterval}</TableCell>
+								<TableCell>
+									<div className='flex space-x-2'>
+										<Button
+											variant='ghost'
+											size='icon'
+											onClick={() => {
+												setCurrentTransaction(transaction);
+												setIsDialogOpen(true);
+											}}
+										>
+											<Pencil className='h-4 w-4' />
+										</Button>
+										<Button variant='ghost' size='icon' onClick={() => handleDelete(transaction.id)}>
+											<Trash2 className='h-4 w-4' />
+										</Button>
+									</div>
 								</TableCell>
 							</TableRow>
 						))}

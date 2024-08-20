@@ -1,3 +1,4 @@
+// src/app/login/page.tsx
 'use client';
 
 import React from 'react';
@@ -11,22 +12,15 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className='flex min-h-screen bg-[#020817] text-white'>
-			<div className='flex-1 flex items-center justify-center space-x-5'>
-				<h1 className='text-5xl font-bold'>FinTech Pro.</h1>
-			</div>
+		<div className='flex min-h-screen bg-background'>
 			<div className='flex-1 flex items-center justify-center'>
-				<Card className='w-[350px] bg-gray-800 border-gray-700'>
+				<Card className='w-[350px]'>
 					<CardHeader>
-						<CardTitle className='text-center text-white'>Sign in to Fintrack Pro</CardTitle>
+						<CardTitle className='text-center'>Sign in to FinTrack Pro</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className='text-center text-sm text-gray-400 mb-4'>Welcome back! Please sign in to continue</p>
-						<Button
-							onClick={() => handleSignIn('google')}
-							variant='outline'
-							className='w-full mb-2 bg-white text-black hover:bg-gray-200'
-						>
+						<p className='text-center text-sm text-muted-foreground mb-4'>Welcome back! Please sign in to continue</p>
+						<Button onClick={() => handleSignIn('google')} variant='outline' className='w-full'>
 							<svg className='w-5 h-5 mr-2' viewBox='0 0 24 24'>
 								<path
 									fill='currentColor'

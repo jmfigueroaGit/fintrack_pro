@@ -138,9 +138,9 @@ function DashboardPage() {
 		<div className='container mx-auto px-4 py-8'>
 			<h1 className='text-2xl font-bold mb-6'>Financial Dashboard</h1>
 
-			<div className='mb-6 flex space-x-4'>
+			<div className='mb-6 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4'>
 				<Select value={filterPeriod} onValueChange={(value: 'week' | 'month' | 'year') => setFilterPeriod(value)}>
-					<SelectTrigger>
+					<SelectTrigger className='w-full sm:w-auto'>
 						<SelectValue placeholder='Select period' />
 					</SelectTrigger>
 					<SelectContent>
@@ -156,7 +156,7 @@ function DashboardPage() {
 						const date: any = e.target.value ? new Date(e.target.value) : null;
 						setFilterDate(date);
 					}}
-					className='border rounded px-2 py-1'
+					className='border rounded px-2 py-1 w-full sm:w-auto'
 				/>
 			</div>
 
@@ -166,7 +166,7 @@ function DashboardPage() {
 						<CardTitle>Total Income</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className='text-2xl font-bold text-green-600'>${totalIncome.toFixed(2)}</p>
+						<p className='text-2xl font-bold text-green-600'>₱{totalIncome.toFixed(2)}</p>
 					</CardContent>
 				</Card>
 				<Card>
@@ -174,7 +174,7 @@ function DashboardPage() {
 						<CardTitle>Total Expenses</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p className='text-2xl font-bold text-red-600'>${totalExpenses.toFixed(2)}</p>
+						<p className='text-2xl font-bold text-red-600'>₱{totalExpenses.toFixed(2)}</p>
 					</CardContent>
 				</Card>
 				<Card>
@@ -183,7 +183,7 @@ function DashboardPage() {
 					</CardHeader>
 					<CardContent>
 						<p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-							${balance.toFixed(2)}
+							₱{balance.toFixed(2)}
 						</p>
 					</CardContent>
 				</Card>
@@ -195,13 +195,13 @@ function DashboardPage() {
 						<CardTitle>Income vs Expenses</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className='h-[300px]'>
+						<div className='h-[300px] w-full'>
 							<ResponsiveContainer width='100%' height='100%'>
 								<BarChart data={incomeVsExpensesData}>
 									<CartesianGrid strokeDasharray='3 3' />
 									<XAxis dataKey='name' />
 									<YAxis />
-									<Tooltip />
+									<Tooltip contentStyle={{ color: 'black' }} /> {/* Apply black text color here */}
 									<Legend />
 									<Bar dataKey='amount' fill='#8884d8' />
 								</BarChart>
@@ -214,7 +214,7 @@ function DashboardPage() {
 						<CardTitle>Expenses by Category</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className='h-[300px]'>
+						<div className='h-[300px] w-full'>
 							<ResponsiveContainer width='100%' height='100%'>
 								<PieChart>
 									<Pie
@@ -244,13 +244,13 @@ function DashboardPage() {
 					<CardTitle>Budget vs Actual Spending</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className='h-[400px]'>
+					<div className='h-[400px] w-full'>
 						<ResponsiveContainer width='100%' height='100%'>
 							<BarChart data={budgetComparisonData}>
 								<CartesianGrid strokeDasharray='3 3' />
 								<XAxis dataKey='category' />
 								<YAxis />
-								<Tooltip />
+								<Tooltip contentStyle={{ color: 'black' }} /> {/* Apply black text color here */}
 								<Legend />
 								<Bar dataKey='budgeted' fill='#8884d8' name='Budgeted' />
 								<Bar dataKey='actual' fill='#82ca9d' name='Actual' />

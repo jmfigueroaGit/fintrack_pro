@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { addBudget, getAllBudgets, updateBudget, deleteBudget, BudgetData } from '@/lib/api/budgets';
 import { TransactionType, BudgetPeriod } from '@prisma/client';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface Budget extends BudgetData {
 	id: string;
@@ -79,8 +80,8 @@ function BudgetPage() {
 
 	return (
 		<div className='container mx-auto px-4 py-8'>
-			<div className='flex justify-between items-center mb-6'>
-				<h1 className='text-2xl font-bold'>Budget Planning</h1>
+			<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6'>
+				<h1 className='text-2xl font-bold mb-4 sm:mb-0'>Budget Planning</h1>
 				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
 					<DialogTrigger asChild>
 						<Button onClick={() => setCurrentBudget(null)}>
@@ -118,7 +119,8 @@ function BudgetPage() {
 					</DialogContent>
 				</Dialog>
 			</div>
-			<div className='overflow-x-auto'>
+			{/* Table for larger screens */}
+			<div className='hidden md:block overflow-x-auto'>
 				<Table>
 					<TableHeader>
 						<TableRow>
@@ -133,7 +135,7 @@ function BudgetPage() {
 						{budgets.map((budget) => (
 							<TableRow key={budget.id}>
 								<TableCell>{budget.category}</TableCell>
-								<TableCell>${budget.amount.toFixed(2)}</TableCell>
+								<TableCell>₱{budget.amount.toFixed(2)}</TableCell>
 								<TableCell>{budget.type}</TableCell>
 								<TableCell>{budget.period}</TableCell>
 								<TableCell>
@@ -155,6 +157,36 @@ function BudgetPage() {
 						))}
 					</TableBody>
 				</Table>
+			</div>
+
+			{/* Cards for mobile view */}
+			<div className='md:hidden grid gap-4'>
+				{budgets.map((budget) => (
+					<Card key={budget.id}>
+						<CardContent className='pt-6'>
+							<h3 className='font-bold mb-2'>{budget.category}</h3>
+							<p>₱{budget.amount.toFixed(2)}</p>
+							<p className='text-sm'>
+								{budget.type} - {budget.period}
+							</p>
+							<div className='mt-4 flex justify-end space-x-2'>
+								<Button
+									variant='ghost'
+									size='icon'
+									onClick={() => {
+										setCurrentBudget(budget);
+										setIsDialogOpen(true);
+									}}
+								>
+									<Pencil className='h-4 w-4' />
+								</Button>
+								<Button variant='ghost' size='icon' onClick={() => handleDelete(budget.id)}>
+									<Trash2 className='h-4 w-4' />
+								</Button>
+							</div>
+						</CardContent>
+					</Card>
+				))}
 			</div>
 		</div>
 	);
