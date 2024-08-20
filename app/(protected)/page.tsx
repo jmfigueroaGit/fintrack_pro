@@ -20,16 +20,19 @@ import {
 } from 'recharts';
 import { getAllTransactions } from '@/lib/api/transactions';
 import { getAllBudgets } from '@/lib/api/budgets';
-import { TransactionType, BudgetPeriod } from '@prisma/client';
+import { TransactionType, BudgetPeriod, RecurrenceInterval } from '@prisma/client';
 
-interface Transaction {
+export interface Transaction {
 	id: string;
 	amount: number;
 	description: string;
-	date: string;
+	date: Date; // Changed from string to Date
 	type: TransactionType;
 	isRecurring: boolean;
-	recurrenceInterval?: string;
+	recurrenceInterval: RecurrenceInterval | null;
+	userId: string;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 interface Budget {
@@ -65,13 +68,11 @@ function DashboardPage() {
 	}
 
 	function filterTransactionsByDate(allTransactions: Transaction[]): Transaction[] {
-		if (!filterDate) return allTransactions;
 		const startDate = getStartDate();
-		return allTransactions.filter((t) => new Date(t.date) >= startDate && new Date(t.date) <= filterDate);
+		return allTransactions.filter((t) => t.date >= startDate && t.date <= filterDate);
 	}
 
 	function getStartDate(): Date {
-		if (!filterDate) return new Date(0); // Return earliest possible date if filterDate is null
 		const start = new Date(filterDate);
 		switch (filterPeriod) {
 			case 'week':
@@ -152,7 +153,7 @@ function DashboardPage() {
 					type='date'
 					value={filterDate ? filterDate.toISOString().split('T')[0] : ''}
 					onChange={(e) => {
-						const date = e.target.value ? new Date(e.target.value) : null;
+						const date: any = e.target.value ? new Date(e.target.value) : null;
 						setFilterDate(date);
 					}}
 					className='border rounded px-2 py-1'

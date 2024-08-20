@@ -55,21 +55,24 @@ export async function getTransaction(id: string) {
 }
 
 export async function getAllTransactions() {
+	const session = await getServerSession(authOptions);
+
+	if (!session) {
+		throw new Error('Unauthorized');
+	}
+
 	try {
-		const session = await getServerSession(authOptions);
-
-		if (!session) {
-			throw new Error('User not authenticated');
-		}
-
 		const transactions = await prisma.transaction.findMany({
 			where: { userId: session.user.id },
 			orderBy: { date: 'desc' },
 		});
+
+		// Prisma automatically converts the date to a JavaScript Date object,
+		// so we don't need to do any conversion here.
 		return transactions;
 	} catch (error) {
-		console.error('Failed to get all transactions:', error);
-		throw new Error('Failed to get all transactions');
+		console.error('Failed to fetch transactions:', error);
+		throw new Error('Failed to fetch transactions');
 	}
 }
 
