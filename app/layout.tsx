@@ -15,6 +15,20 @@ const fontSans = FontSans({
 export const metadata: Metadata = {
 	title: 'Fintrack Pro',
 	description: 'Fintrack Pro is a personal finance tracker. Track your income, expenses, and budgets.',
+	manifest: '/manifest.json',
+	themeColor: '#000000',
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: 'default',
+		title: 'FinTrack Pro',
+	},
+	formatDetection: {
+		telephone: false,
+	},
+	icons: {
+		icon: '/192x192.jpg',
+		apple: '/192x192.jpg',
+	},
 };
 
 export default function RootLayout({
