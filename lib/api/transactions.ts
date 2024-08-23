@@ -13,48 +13,10 @@ export interface TransactionData {
 	type: TransactionType;
 	isRecurring: boolean;
 	recurrenceInterval?: RecurrenceInterval;
+	paid: boolean;
 }
 
-export async function addTransaction(data: TransactionData) {
-	try {
-		const session = await getServerSession(authOptions);
-
-		if (!session) {
-			throw new Error('User not authenticated');
-		}
-
-		const transaction = await prisma.transaction.create({
-			data: {
-				...data,
-				userId: session.user.id,
-			},
-		});
-		return transaction;
-	} catch (error) {
-		console.error('Failed to add transaction:', error);
-		throw new Error('Failed to add transaction');
-	}
-}
-
-export async function getTransaction(id: string) {
-	try {
-		const session = await getServerSession(authOptions);
-
-		if (!session) {
-			throw new Error('User not authenticated');
-		}
-
-		const transaction = await prisma.transaction.findUnique({
-			where: { id, userId: session.user.id },
-		});
-		return transaction;
-	} catch (error) {
-		console.error('Failed to get transaction:', error);
-		throw new Error('Failed to get transaction');
-	}
-}
-
-export async function getAllTransactions() {
+export async function getTransactionsByDateRange(startDate: Date, endDate: Date) {
 	const session = await getServerSession(authOptions);
 
 	if (!session) {
@@ -63,52 +25,101 @@ export async function getAllTransactions() {
 
 	try {
 		const transactions = await prisma.transaction.findMany({
-			where: { userId: session.user.id },
+			where: {
+				userId: session.user.id,
+				date: {
+					gte: startDate,
+					lte: endDate,
+				},
+			},
 			orderBy: { date: 'desc' },
 		});
-
-		// Prisma automatically converts the date to a JavaScript Date object,
-		// so we don't need to do any conversion here.
 		return transactions;
 	} catch (error) {
-		console.error('Failed to fetch transactions:', error);
+		console.error('Error fetching transactions:', error);
 		throw new Error('Failed to fetch transactions');
 	}
 }
 
 export async function updateTransaction(id: string, data: Partial<TransactionData>) {
+	const session = await getServerSession(authOptions);
+
+	if (!session) {
+		throw new Error('Unauthorized');
+	}
+
 	try {
-		const session = await getServerSession(authOptions);
-
-		if (!session) {
-			throw new Error('User not authenticated');
-		}
-
-		const transaction = await prisma.transaction.update({
+		const updatedTransaction = await prisma.transaction.update({
 			where: { id, userId: session.user.id },
-			data,
+			data: {
+				...data,
+				recurrenceInterval: data.isRecurring ? data.recurrenceInterval : null,
+			},
 		});
 
-		return transaction;
+		return updatedTransaction;
 	} catch (error) {
-		console.error('Failed to update transaction:', error);
+		console.error('Error updating transaction:', error);
 		throw new Error('Failed to update transaction');
 	}
 }
 
 export async function deleteTransaction(id: string) {
+	const session = await getServerSession(authOptions);
+
+	if (!session) {
+		throw new Error('Unauthorized');
+	}
+
 	try {
-		const session = await getServerSession(authOptions);
-
-		if (!session) {
-			throw new Error('User not authenticated');
-		}
-
 		await prisma.transaction.delete({
 			where: { id, userId: session.user.id },
 		});
 	} catch (error) {
-		console.error('Failed to delete transaction:', error);
+		console.error('Error deleting transaction:', error);
 		throw new Error('Failed to delete transaction');
+	}
+}
+
+export async function markTransactionAsPaid(id: string) {
+	const session = await getServerSession(authOptions);
+
+	if (!session) {
+		throw new Error('Unauthorized');
+	}
+
+	try {
+		const updatedTransaction = await prisma.transaction.update({
+			where: { id, userId: session.user.id },
+			data: { paid: true },
+		});
+
+		return updatedTransaction;
+	} catch (error) {
+		console.error('Error marking transaction as paid:', error);
+		throw new Error('Failed to mark transaction as paid');
+	}
+}
+
+export async function addTransaction(data: Omit<TransactionData, 'id'>) {
+	const session = await getServerSession(authOptions);
+
+	if (!session) {
+		throw new Error('Unauthorized');
+	}
+
+	try {
+		const newTransaction = await prisma.transaction.create({
+			data: {
+				...data,
+				userId: session.user.id,
+				recurrenceInterval: data.isRecurring ? data.recurrenceInterval : null,
+			},
+		});
+
+		return newTransaction;
+	} catch (error) {
+		console.error('Error adding transaction:', error);
+		throw new Error('Failed to add transaction');
 	}
 }

@@ -72,8 +72,17 @@ function BudgetPage() {
 
 	if (loading) {
 		return (
-			<div className='flex justify-center items-center h-64'>
-				<Loader2 className='h-8 w-8 animate-spin' />
+			<div>
+				<Loader2
+					className='
+				text-blue-600
+				w-16 h-16
+				mx-auto
+				animate-spin
+				animate-spin-slow
+				animate-spin-reverse
+			'
+				/>
 			</div>
 		);
 	}

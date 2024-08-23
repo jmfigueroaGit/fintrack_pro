@@ -1,10 +1,8 @@
 // src/app/dashboard/page.tsx
 'use client';
-import { withAuth } from '@/lib/auth/withAuth';
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
 import {
 	BarChart,
 	Bar,
@@ -18,21 +16,21 @@ import {
 	Pie,
 	Cell,
 } from 'recharts';
-import { getAllTransactions } from '@/lib/api/transactions';
+import { getTransactionsByDateRange } from '@/lib/api/transactions';
 import { getAllBudgets } from '@/lib/api/budgets';
 import { TransactionType, BudgetPeriod, RecurrenceInterval } from '@prisma/client';
+import { Loader2 } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
 
-export interface Transaction {
+interface Transaction {
 	id: string;
 	amount: number;
 	description: string;
-	date: Date; // Changed from string to Date
+	date: Date;
 	type: TransactionType;
 	isRecurring: boolean;
 	recurrenceInterval: RecurrenceInterval | null;
-	userId: string;
-	createdAt: Date;
-	updatedAt: Date;
+	paid: boolean;
 }
 
 interface Budget {
@@ -43,22 +41,31 @@ interface Budget {
 	period: BudgetPeriod;
 }
 
-function DashboardPage() {
+export default function DashboardPage() {
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	const [budgets, setBudgets] = useState<Budget[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [filterPeriod, setFilterPeriod] = useState<'week' | 'month' | 'year'>('month');
-	const [filterDate, setFilterDate] = useState<Date>(new Date());
+	const [loading, setLoading] = useState(false);
+	const [dateRange, setDateRange] = useState<DateRange | undefined>({
+		from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+		to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+	});
 
 	useEffect(() => {
-		loadData();
-	}, [filterPeriod, filterDate]);
+		if (dateRange?.from && dateRange?.to) {
+			loadData();
+		}
+	}, []); // Empty dependency array, we'll manually trigger loadData
 
 	async function loadData() {
+		if (!dateRange?.from || !dateRange?.to) return;
+
 		setLoading(true);
 		try {
-			const [transactionsData, budgetsData] = await Promise.all([getAllTransactions(), getAllBudgets()]);
-			setTransactions(filterTransactionsByDate(transactionsData));
+			const [transactionsData, budgetsData] = await Promise.all([
+				getTransactionsByDateRange(dateRange.from, dateRange.to),
+				getAllBudgets(),
+			]);
+			setTransactions(transactionsData);
 			setBudgets(budgetsData);
 		} catch (error) {
 			console.error('Failed to load dashboard data:', error);
@@ -67,33 +74,21 @@ function DashboardPage() {
 		}
 	}
 
-	function filterTransactionsByDate(allTransactions: Transaction[]): Transaction[] {
-		const startDate = getStartDate();
-		return allTransactions.filter((t) => t.date >= startDate && t.date <= filterDate);
-	}
-
-	function getStartDate(): Date {
-		const start = new Date(filterDate);
-		switch (filterPeriod) {
-			case 'week':
-				start.setDate(start.getDate() - 7);
-				break;
-			case 'month':
-				start.setMonth(start.getMonth() - 1);
-				break;
-			case 'year':
-				start.setFullYear(start.getFullYear() - 1);
-				break;
+	const handleDateRangeChange = (range: DateRange | undefined) => {
+		setDateRange(range);
+		if (range?.from && range?.to) {
+			loadData();
 		}
-		return start;
-	}
+	};
 
 	const totalIncome = transactions
 		.filter((t) => t.type === TransactionType.INCOME)
 		.reduce((sum, t) => sum + t.amount, 0);
+
 	const totalExpenses = transactions
 		.filter((t) => t.type === TransactionType.EXPENSE)
 		.reduce((sum, t) => sum + t.amount, 0);
+
 	const balance = totalIncome - totalExpenses;
 
 	const incomeVsExpensesData = [
@@ -128,8 +123,17 @@ function DashboardPage() {
 
 	if (loading) {
 		return (
-			<div className='flex justify-center items-center h-64'>
-				<Loader2 className='h-8 w-8 animate-spin' />
+			<div>
+				<Loader2
+					className='
+				text-blue-600
+				w-16 h-16
+				mx-auto
+				animate-spin
+				animate-spin-slow
+				animate-spin-reverse
+			'
+				/>
 			</div>
 		);
 	}
@@ -138,129 +142,130 @@ function DashboardPage() {
 		<div className='container mx-auto px-4 py-8'>
 			<h1 className='text-2xl font-bold mb-6'>Financial Dashboard</h1>
 
-			<div className='mb-6 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4'>
-				<Select value={filterPeriod} onValueChange={(value: 'week' | 'month' | 'year') => setFilterPeriod(value)}>
-					<SelectTrigger className='w-full sm:w-auto'>
-						<SelectValue placeholder='Select period' />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value='week'>Week</SelectItem>
-						<SelectItem value='month'>Month</SelectItem>
-						<SelectItem value='year'>Year</SelectItem>
-					</SelectContent>
-				</Select>
-				<input
-					type='date'
-					value={filterDate ? filterDate.toISOString().split('T')[0] : ''}
-					onChange={(e) => {
-						const date: any = e.target.value ? new Date(e.target.value) : null;
-						setFilterDate(date);
-					}}
-					className='border rounded px-2 py-1 w-full sm:w-auto'
-				/>
+			<div className='mb-6'>
+				<Calendar mode='range' selected={dateRange} onSelect={handleDateRangeChange} className='rounded-md border' />
+				<div className='mt-2 text-sm text-gray-500'>
+					{dateRange?.from ? (
+						dateRange.to ? (
+							<>
+								{dateRange.from.toDateString()} - {dateRange.to.toDateString()}
+							</>
+						) : (
+							'Select end date'
+						)
+					) : (
+						'Select start date'
+					)}
+				</div>
 			</div>
 
-			<div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8'>
-				<Card>
-					<CardHeader>
-						<CardTitle>Total Income</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<p className='text-2xl font-bold text-green-600'>₱{totalIncome.toFixed(2)}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Total Expenses</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<p className='text-2xl font-bold text-red-600'>₱{totalExpenses.toFixed(2)}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Balance</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-							₱{balance.toFixed(2)}
-						</p>
-					</CardContent>
-				</Card>
-			</div>
-
-			<div className='grid gap-4 md:grid-cols-2 mb-8'>
-				<Card>
-					<CardHeader>
-						<CardTitle>Income vs Expenses</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className='h-[300px] w-full'>
-							<ResponsiveContainer width='100%' height='100%'>
-								<BarChart data={incomeVsExpensesData}>
-									<CartesianGrid strokeDasharray='3 3' />
-									<XAxis dataKey='name' />
-									<YAxis />
-									<Tooltip contentStyle={{ color: 'black' }} /> {/* Apply black text color here */}
-									<Legend />
-									<Bar dataKey='amount' fill='#8884d8' />
-								</BarChart>
-							</ResponsiveContainer>
-						</div>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Expenses by Category</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className='h-[300px] w-full'>
-							<ResponsiveContainer width='100%' height='100%'>
-								<PieChart>
-									<Pie
-										data={expensesPieChartData}
-										cx='50%'
-										cy='50%'
-										labelLine={false}
-										outerRadius={80}
-										fill='#8884d8'
-										dataKey='value'
-										label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-									>
-										{expensesPieChartData.map((entry, index) => (
-											<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-										))}
-									</Pie>
-									<Tooltip />
-								</PieChart>
-							</ResponsiveContainer>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Budget vs Actual Spending</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className='h-[400px] w-full'>
-						<ResponsiveContainer width='100%' height='100%'>
-							<BarChart data={budgetComparisonData}>
-								<CartesianGrid strokeDasharray='3 3' />
-								<XAxis dataKey='category' />
-								<YAxis />
-								<Tooltip contentStyle={{ color: 'black' }} /> {/* Apply black text color here */}
-								<Legend />
-								<Bar dataKey='budgeted' fill='#8884d8' name='Budgeted' />
-								<Bar dataKey='actual' fill='#82ca9d' name='Actual' />
-							</BarChart>
-						</ResponsiveContainer>
+			{loading ? (
+				<div className='flex justify-center items-center h-64'>
+					<div className='animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900'></div>
+				</div>
+			) : (
+				<>
+					<div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8'>
+						<Card>
+							<CardHeader>
+								<CardTitle>Total Income</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<p className='text-2xl font-bold text-green-600'>${totalIncome.toFixed(2)}</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Total Expenses</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<p className='text-2xl font-bold text-red-600'>${totalExpenses.toFixed(2)}</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Balance</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+									${balance.toFixed(2)}
+								</p>
+							</CardContent>
+						</Card>
 					</div>
-				</CardContent>
-			</Card>
+
+					<div className='grid gap-4 md:grid-cols-2 mb-8'>
+						<Card>
+							<CardHeader>
+								<CardTitle>Income vs Expenses</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className='h-[300px] w-full'>
+									<ResponsiveContainer width='100%' height='100%'>
+										<BarChart data={incomeVsExpensesData}>
+											<CartesianGrid strokeDasharray='3 3' />
+											<XAxis dataKey='name' />
+											<YAxis />
+											<Tooltip contentStyle={{ color: 'black' }} />
+											<Legend />
+											<Bar dataKey='amount' fill='#8884d8' />
+										</BarChart>
+									</ResponsiveContainer>
+								</div>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Expenses by Category</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<div className='h-[300px] w-full'>
+									<ResponsiveContainer width='100%' height='100%'>
+										<PieChart>
+											<Pie
+												data={expensesPieChartData}
+												cx='50%'
+												cy='50%'
+												labelLine={false}
+												outerRadius={80}
+												fill='#8884d8'
+												dataKey='value'
+												label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+											>
+												{expensesPieChartData.map((entry, index) => (
+													<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+												))}
+											</Pie>
+											<Tooltip contentStyle={{ color: 'black' }} />
+										</PieChart>
+									</ResponsiveContainer>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+
+					<Card>
+						<CardHeader>
+							<CardTitle>Budget vs Actual Spending</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className='h-[400px] w-full'>
+								<ResponsiveContainer width='100%' height='100%'>
+									<BarChart data={budgetComparisonData}>
+										<CartesianGrid strokeDasharray='3 3' />
+										<XAxis dataKey='category' />
+										<YAxis />
+										<Tooltip contentStyle={{ color: 'black' }} />
+										<Legend />
+										<Bar dataKey='budgeted' fill='#8884d8' name='Budgeted' />
+										<Bar dataKey='actual' fill='#82ca9d' name='Actual' />
+									</BarChart>
+								</ResponsiveContainer>
+							</div>
+						</CardContent>
+					</Card>
+				</>
+			)}
 		</div>
 	);
 }
-
-export default withAuth(DashboardPage);

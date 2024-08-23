@@ -54,15 +54,16 @@ model Session {
 
 model Transaction {
   id                 String   @id @default(cuid())
+  userId             String
   amount             Float
   description        String
   date               DateTime
   type               TransactionType
-  isRecurring        Boolean  @default(false)
-  recurrenceInterval RecurrenceInterval @default(NONE)
-  userId             String
+  isRecurring        Boolean
+  recurrenceInterval RecurrenceInterval?
+  paid               Boolean  @default(false)
+  dueDate            DateTime?
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
